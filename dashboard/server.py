@@ -212,9 +212,9 @@ def create_server(store,token,password,username='admin',bind='0.0.0.0',port=9106
   def do_GET(self):
    p=urllib.parse.urlsplit(self.path)
    if p.path=='/healthz':return self.send({'status':'ok'})
-   files={'/':'index.html','/settings':'settings.html','/login':'login.html','/app.js':'app.js','/settings.js':'settings.js','/login.js':'login.js','/appearance.js':'appearance.js','/style.css':'style.css'}
+   files={'/':'index.html','/settings':'settings.html','/login':'login.html','/app.js':'app.js','/settings.js':'settings.js','/login.js':'login.js','/appearance.js':'appearance.js','/style.css':'style.css','/favicon.svg':'favicon.svg','/favicon.ico':'favicon.svg'}
    if p.path in files:
-    f=STATIC/files[p.path];return self.send(f.read_bytes(),{'html':'text/html','js':'text/javascript','css':'text/css'}[f.suffix[1:]])
+    f=STATIC/files[p.path];return self.send(f.read_bytes(),{'html':'text/html','js':'text/javascript','css':'text/css','svg':'image/svg+xml'}[f.suffix[1:]])
    agent=p.path=='/api/collector-config'
    if not self.auth(agent):return
    try:
