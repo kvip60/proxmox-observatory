@@ -4,6 +4,26 @@ A self-hosted sensor dashboard with graphs, plus outbound-only collectors for Pr
 
 **This repository does not install, replace, stop, or modify an existing monitoring service.** Installation is explicit. The dashboard defaults to port **9106**, allowing an older dashboard on 9105 to remain in place.
 
+## Sample views
+
+Illustrative previews of the dashboard and settings, using synthetic example data. These are sample layouts rather than screenshots of a live server; no private addresses, hardware identifiers, or credentials are included.
+
+### Proxmox dashboard · Dark Slate
+
+![Proxmox sample dashboard with host tabs, summary cards and sensor graphs](docs/sample-views/dashboard-proxmox.png)
+
+### Unraid dashboard · Light Paper
+
+![Unraid sample dashboard in the light theme](docs/sample-views/dashboard-unraid-light.png)
+
+### Sensor selection
+
+![Sample settings view for selecting sources and individual sensors](docs/sample-views/settings-sensors.png)
+
+### Themes and colours
+
+![Sample appearance settings with accent presets, custom colour and chart preview](docs/sample-views/settings-appearance.png)
+
 ## What it monitors
 
 | Source | Measurements |
