@@ -85,13 +85,12 @@ class DashboardTests(unittest.TestCase):
   self.assertEqual(self.call('/api/users',auth=False,cookie=cookie)[0],403)
   self.assertEqual(self.call('/api/settings',{'disabled_sources':[],'disabled_metrics':[]},auth=False,cookie=cookie)[0],403)
   self.assertEqual(self.call('/api/account',{'username':'viewer-new','current_password':'viewer-password-for-tests'},auth=False,cookie=cookie,action_name='account')[0],200)
- def test_six_character_password_minimum(self):
-  for password,status in [('abcde',400),('abcdef',201)]:
+ def test_password_has_no_length_minimum(self):
+  for password,status in [('',400),('a',201)]:
    self.assertEqual(self.call('/api/users',{'username':'short-user','password':password,'role':'viewer','current_password':PASSWORD},action_name='users')[0],status)
-  cookie=self.login('short-user','abcdef')
-  self.assertEqual(self.call('/api/account',{'password':'12345','current_password':'abcdef'},auth=False,cookie=cookie,action_name='account')[0],400)
-  self.assertEqual(self.call('/api/account',{'password':'123456','current_password':'abcdef'},auth=False,cookie=cookie,action_name='account')[0],200)
-  self.login('short-user','123456')
+  cookie=self.login('short-user','a')
+  self.assertEqual(self.call('/api/account',{'password':'b','current_password':'a'},auth=False,cookie=cookie,action_name='account')[0],200)
+  self.login('short-user','b')
  def test_current_password_duplicate_names_and_last_admin(self):
   status,data=self.call('/api/me');uid=data['id']
   self.assertEqual(self.call('/api/account',{'username':'changed','current_password':'wrong'},action_name='account')[0],403)
