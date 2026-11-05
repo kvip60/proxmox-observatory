@@ -1,6 +1,6 @@
 # Proxmox Observatory
 
-A self-hosted sensor dashboard with graphs, plus a small outbound-only collector for a Proxmox VE host. The dashboard runs in an unprivileged Docker container. The collector runs on Proxmox and performs read-only queries.
+A self-hosted sensor dashboard with graphs, plus outbound-only collectors for Proxmox VE and Unraid hosts. The dashboard runs in an unprivileged Docker container. The collector runs on Proxmox and performs read-only queries.
 
 **This repository does not install, replace, stop, or modify an existing monitoring service.** Installation is explicit. The dashboard defaults to port **9106**, allowing an older dashboard on 9105 to remain in place.
 
@@ -25,11 +25,11 @@ Availability depends on hardware, permissions, drivers, and installed tools. Uns
 
 - Last hour, 6 hours, 24 hours or 7 days; configurable retention.
 - Search metrics; click any card for a larger graph; export the current view to CSV.
-- Open **Sensor selection** to disable whole collectors or individual sensors.
+- Open **Settings → Sensors** to disable whole collectors or individual sensors.
 - A disabled collector is **not polled** after the agent fetches the new settings.
 - Deselecting an individual sensor filters its future values before upload and storage. Its source may still be queried to collect other readings (for example, one SMART query supplies several sensors).
 - Disabled readings are hidden from historical graph responses too. Old records are retained until normal expiry; re-enabling reveals historical data again.
-- Settings are global to this dashboard and persist in its data volume. Re-enable a collector to discover sensors added later.
+- Sensor settings are separate for each host and persist in its data volume. Re-enable a collector to discover sensors added later.
 - Shorter charts use the stored samples. Long ranges reduce points using the **maximum observed value in each bucket**, preserving spikes. These are sampled peaks, not time-weighted averages.
 - Graph history starts when the new collector connects. This package does not automatically copy an existing dashboard's database or SMART logs.
 
@@ -84,7 +84,7 @@ IDRAC_URL=
 
 **Remote collector access:** loopback cannot be reached from another host. Put a TLS reverse proxy in front of the service and use its HTTPS URL in the collector, or bind `DASHBOARD_BIND_IP` to the Docker host's LAN IP. If a reverse proxy runs in another container, use an appropriate Docker network/service address or reachable LAN binding. Do not bind to an IP absent from the Docker host.
 
-For direct LAN access, HTTP transmits the dashboard password and token without encryption. Use it only on a trusted isolated network; HTTPS is recommended. Do not expose this application directly to the Internet. There is one administrator account, with no MFA or rate-limiting; use an authenticated reverse proxy if broader access is required. Preserve the incoming `Host` header when proxying, so settings-origin checks work.
+For direct LAN access, HTTP transmits the dashboard password and token without encryption. Use it only on a trusted isolated network; HTTPS is recommended. Do not expose this application directly to the Internet. Accounts support administrator and viewer roles, hashed passwords, twelve-hour sessions, and login rate limiting. Use an authenticated reverse proxy for broader access; MFA is not built in. Preserve the incoming `Host` header when proxying, so settings-origin checks work.
 
 ```sh
 docker compose config --quiet
@@ -185,7 +185,7 @@ No inbound collector port needs opening. Allow Proxmox outbound access to the re
 
 ## 3. Configure sensor selection
 
-1. Wait for the first sample, then click **Sensor selection**.
+1. Wait for the first sample, then click **Settings → Sensors**.
 2. Uncheck a whole collector to stop querying it on the next poll.
 3. Search and uncheck individual sensor IDs to stop transmitting/storing their values and hide their graphs.
 4. Use **Select visible / Deselect visible** to apply a selection to the filtered list.
@@ -228,14 +228,14 @@ Do **not** add `--volumes` to `docker compose down` unless you intend to delete 
 
 ### Credentials
 
-The UI uses HTTP Basic authentication. The ingestion/config endpoints use a separate bearer token. A collector token can submit telemetry and read selections; it cannot change dashboard settings or retrieve history. Admin credentials cannot be used for ingestion. Rotate the ingestion token on both ends and restart the container and collector; rotate the admin password file and recreate the container. Never commit `.env`, `.secrets`, a collector token/config with real credentials, a database, or telemetry exports.
+The UI uses a login form with HttpOnly, SameSite sessions. Existing Basic authentication clients remain compatible. On upgrade, the existing administrator credentials are migrated into hashed accounts without resetting them. Subsequent account changes live in SQLite; editing the bootstrap password file does not reset an existing account. Collector ingestion/configuration uses separate per-host bearer tokens. A token cannot view dashboard history, manage accounts, or write settings. Never commit secrets, live collector configurations, databases, or telemetry exports.
 
 ## Troubleshooting
 
 | Symptom | Check |
 | --- | --- |
 | Dashboard waiting for collector | URL, LAN binding, firewall, HTTPS trust, matching ingestion-token files, collector journal |
-| Browser repeatedly asks for credentials | `ADMIN_USER`, password file, reverse proxy forwarding `Authorization` |
+| Cannot sign in | Check username; use the recovery command below if needed. Proxy must preserve cookies and `Host`. |
 | Sensor selection save rejected | Reverse proxy must preserve `Host`; use the same origin for page and API |
 | CPU/I/O graphs initially absent | Wait for the second successful sample |
 | IPMI unavailable | `ipmitool sensor -c`, local BMC access; unsupported sensors can be discrete rather than numeric |
@@ -258,3 +258,33 @@ docker build -t observatory:test .
 Tests use temporary local files and synthetic metrics, not your Proxmox host. They cover credential separation, settings/CSRF checks, disabled sources and sensors, history peak retention, queued-upload recovery, and out-of-order samples. CI also builds the container and checks its health/authentication. No tests run hardware updates, change temperatures, reboot hosts, or install into production.
 
 This is a small custom monitor, not a replacement for backup validation, hardware diagnostics, or a dedicated alerting system. It displays source status and reported thresholds but does not send email/push alerts or perform automatic recovery/shutdown.
+
+
+## Settings, accounts and appearance
+
+Open **Settings** from the dashboard. **Sensors** lets administrators choose the host, disable entire sources, search/filter individual sensors, and select or deselect the visible set. Sensor selections affect everyone viewing that host. The dashboard host selector switches graphs and history independently between registered collectors.
+
+**Appearance** offers Dark Slate, Light Paper, Midnight, and System themes, six accent presets, and a custom colour picker with an immediate preview. Press Save to persist it for your account. Colours are adjusted for readable contrast. **My account** changes your username or password after verifying your current password. Passwords require 16–256 characters. **Users** lets administrators add or edit administrators and viewers; viewers can view monitoring and change their own appearance/account, but cannot manage sensors, users, or collectors. The last administrator cannot be demoted. Password changes revoke previous sessions.
+
+Keep the data volume when updating: it contains accounts, preferences, host registrations, history and selections. For local administrator password recovery, run the interactive command below on the Docker host; it prompts without echoing the new password:
+
+```sh
+docker compose exec dashboard python manage.py reset-password admin
+```
+
+For HTTPS deployments set `SESSION_COOKIE_SECURE=1` in the dashboard environment, then recreate the container. Plain HTTP is suitable only for a trusted private network.
+
+## Add a separate Unraid collector
+
+1. Sign in as administrator and open **Settings → Hosts & collectors**. Choose a unique slug such as `unraid`, a label, platform **Unraid**, and optional host address. Confirm with your current administrator password. The new ingestion token is displayed only once: save it locally and keep it private.
+2. Copy the three shell scripts in `unraid/` to `/boot/config/plugins/observatory-unraid/` on Unraid. Copy `collector.example.json` there as `collector.json`. The native collector uses the tools already supplied by Unraid: Bash, jq, curl, smartctl, lm-sensors, Docker, and optionally ZFS/NUT. Python and a privileged collector container are unnecessary.
+3. Edit the JSON locally: set `dashboard_url` to your reachable dashboard URL, `collector_id` to the registered slug, and `ups_name` to your local NUT instance (often `ups@localhost`). Save the ingestion token in the configured `ingest_token` file. Keep the flash configuration private; FAT filesystems do not enforce Unix permissions. Do not place credentials on a public share.
+4. Start it with `bash /boot/config/plugins/observatory-unraid/start.sh`. Check `/var/log/observatory-unraid.log`. Add this line once to `/boot/config/go`, preserving existing contents, for reboot persistence:
+
+```sh
+bash /boot/config/plugins/observatory-unraid/start.sh
+```
+
+Stop with `bash /boot/config/plugins/observatory-unraid/stop.sh`. The process lock prevents duplicate collectors. Select the host in the dashboard; a first complete cycle can take a minute. CPU/network rates need two samples.
+
+Unraid collects host CPU/core and memory, Linux sensors, network rates/errors, SMART (without waking standby HDDs), native Docker CPU/memory/status, array status/parity activity, mounted array/cache storage, ZFS pools, and NUT UPS metrics. It does not query Proxmox guests or IPMI. Unavailable sources are shown as unavailable. A host has its own token, graph history, and sensor choices. The native agent caches choices in RAM and uploads fresh samples each cycle; unlike the Python Proxmox agent, it does not spool an outage backlog. Use HTTPS when crossing untrusted networks.

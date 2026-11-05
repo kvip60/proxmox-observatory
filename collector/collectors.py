@@ -46,18 +46,18 @@ def host():
    if not isinstance(data,dict):continue
    for field,value in data.items():
     if not field.endswith('_input'):continue
-    kind=field.split('_')[0];unit='Â°C' if kind.startswith('temp') else 'RPM' if kind.startswith('fan') else 'W' if kind.startswith('power') else 'V' if kind.startswith('in') else 'A' if kind.startswith('curr') else ''
+    kind=field.split('_')[0];unit='°C' if kind.startswith('temp') else 'RPM' if kind.startswith('fan') else 'W' if kind.startswith('power') else 'V' if kind.startswith('in') else 'A' if kind.startswith('curr') else ''
     scale=1;warn=data.get(kind+'_max');crit=data.get(kind+'_crit')
-    metric(m,'sensor.'+chip+'.'+field,label,value,unit,'Temperatures' if unit=='Â°C' else 'Hardware sensors',chip,warn,crit)
- e['host']={'name':'Proxmox Â· pve','status':'running','detail':os.uname().release}
+    metric(m,'sensor.'+chip+'.'+field,label,value,unit,'Temperatures' if unit=='°C' else 'Hardware sensors',chip,warn,crit)
+ e['host']={'name':'Proxmox · pve','status':'running','detail':os.uname().release}
  return m,e
 def ipmi():
  m={};e={};counts={}
  for row in csv.reader(command(['ipmitool','sensor','-c'],45).splitlines()):
   if len(row)<4:continue
   name,value,unit,status=row[:4];counts[name]=counts.get(name,0)+1;key=name+' '+str(counts[name]);ent=name if counts[name]==1 else key
-  e['ipmi.'+key]={'name':ent,'status':status,'detail':unit+' Â· '+value,'group':'BMC sensors'}
-  units={'degrees C':'Â°C','RPM':'RPM','Watts':'W','Volts':'V','Amps':'A','percent':'%'}
+  e['ipmi.'+key]={'name':ent,'status':status,'detail':unit+' · '+value,'group':'BMC sensors'}
+  units={'degrees C':'°C','RPM':'RPM','Watts':'W','Volts':'V','Amps':'A','percent':'%'}
   if unit not in units:continue
   metric(m,'ipmi.'+key,ent,value,units[unit],'Fans & power' if unit!='degrees C' else 'Temperatures','iDRAC / BMC',row[7] if len(row)>7 and row[7]!='na' else None,row[8] if len(row)>8 and row[8]!='na' else None)
  return m,e
@@ -68,12 +68,12 @@ def drives():
   except Exception:continue
   if 'model_name' not in j:continue
   serial=j.get('serial_number',dev);model=j['model_name'];n=j.get('nvme_smart_health_information_log',{});health=j.get('smart_status',{}).get('passed');temp=j.get('temperature',{})
-  e['drive.'+serial]={'name':model,'status':'healthy' if health else 'warning','detail':dev+' Â· '+j.get('firmware_version',''),'serial':serial,'capacity':j.get('user_capacity',{}).get('bytes'),'group':'Drives'}
-  metric(m,'drive.'+serial+'.temperature',model+' temperature',temp.get('current'),'Â°C','Drives',serial,temp.get('op_limit_max'),temp.get('critical_limit_max'))
-  for k,label,unit in [('percentage_used','Endurance used','%'),('available_spare','Available spare','%'),('media_errors','Lifetime media errors','errors'),('critical_warning','Critical warning','flags'),('warning_temp_time','Lifetime hot time','minutes')]:metric(m,'drive.'+serial+'.'+k,model+' Â· '+label,n.get(k),unit,'Drives',serial)
-  for k,v in enumerate(n.get('temperature_sensors',[])):metric(m,'drive.'+serial+'.sensor'+str(k),model+' sensor '+str(k+1),v,'Â°C','Drives',serial)
+  e['drive.'+serial]={'name':model,'status':'healthy' if health else 'warning','detail':dev+' · '+j.get('firmware_version',''),'serial':serial,'capacity':j.get('user_capacity',{}).get('bytes'),'group':'Drives'}
+  metric(m,'drive.'+serial+'.temperature',model+' temperature',temp.get('current'),'°C','Drives',serial,temp.get('op_limit_max'),temp.get('critical_limit_max'))
+  for k,label,unit in [('percentage_used','Endurance used','%'),('available_spare','Available spare','%'),('media_errors','Lifetime media errors','errors'),('critical_warning','Critical warning','flags'),('warning_temp_time','Lifetime hot time','minutes')]:metric(m,'drive.'+serial+'.'+k,model+' · '+label,n.get(k),unit,'Drives',serial)
+  for k,v in enumerate(n.get('temperature_sensors',[])):metric(m,'drive.'+serial+'.sensor'+str(k),model+' sensor '+str(k+1),v,'°C','Drives',serial)
   for a in j.get('ata_smart_attributes',{}).get('table',[]):
-   if a['id'] in [5,187,188,197,198,199]:metric(m,'drive.'+serial+'.ata'+str(a['id']),model+' Â· '+a['name'].replace('_',' '),a.get('raw',{}).get('value'),'count','Drives',serial)
+   if a['id'] in [5,187,188,197,198,199]:metric(m,'drive.'+serial+'.ata'+str(a['id']),model+' · '+a['name'].replace('_',' '),a.get('raw',{}).get('value'),'count','Drives',serial)
  return m,e
 def pools():
  m={};e={}
@@ -113,6 +113,6 @@ def gpu():
  m={};e={};raw=command(['nvidia-smi','--query-gpu=name,temperature.gpu,utilization.gpu,memory.used,memory.total,power.draw,fan.speed','--format=csv,noheader,nounits'])
  for row in csv.reader(raw.splitlines()):
   name=row[0];e['gpu']={'name':name,'status':'online','detail':'NVIDIA GPU','group':'GPU'}
-  for i,key,label,unit in [(1,'temperature','GPU temperature','Â°C'),(2,'utilization','GPU utilization','%'),(3,'memory','GPU memory used','MiB'),(5,'power','GPU power','W'),(6,'fan','GPU fan','%')]:metric(m,'gpu.'+key,label,row[i].strip(),unit,'GPU',name)
+  for i,key,label,unit in [(1,'temperature','GPU temperature','°C'),(2,'utilization','GPU utilization','%'),(3,'memory','GPU memory used','MiB'),(5,'power','GPU power','W'),(6,'fan','GPU fan','%')]:metric(m,'gpu.'+key,label,row[i].strip(),unit,'GPU',name)
  return m,e
 COLLECTORS={'Host & Linux sensors':host,'BMC / IPMI':ipmi,'Drive SMART':drives,'ZFS':pools,'Proxmox guests':guests,'Docker':docker,'UPS':ups,'GPU':gpu}

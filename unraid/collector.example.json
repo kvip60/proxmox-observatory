@@ -1,0 +1,7 @@
+{
+  "dashboard_url": "https://YOUR_DASHBOARD_HOST",
+  "collector_id": "unraid",
+  "token_file": "/boot/config/plugins/observatory-unraid/ingest_token",
+  "interval_seconds": 30,
+  "ups_name": "ups@localhost"
+}

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Outbound-only Proxmox telemetry agent. No inbound server, no remote shell."""
-import argparse,concurrent.futures,json,logging,os,ssl,time,urllib.error,urllib.request
+import argparse,concurrent.futures,json,logging,os,ssl,time,urllib.error,urllib.request,urllib.parse
 from pathlib import Path
 from collectors import COLLECTORS,OPTIONS
 log=logging.getLogger('observatory')
@@ -15,6 +15,7 @@ def run(config,once=False):
  if not base.startswith(('https://','http://')):raise ValueError('dashboard_url must use HTTP or HTTPS')
  if len(token)<32:raise ValueError('Token must have at least 32 characters')
  interval=max(15,int(config.get('interval_seconds',30)));OPTIONS.update(config.get('options',{}))
+ suffix='?collector='+urllib.parse.quote(config.get('collector_id','proxmox'))
  spool=Path(config.get('spool_dir','/var/lib/proxmox-observatory/spool'));spool.mkdir(parents=True,exist_ok=True)
  selection=spool.parent/'selection.json'
  try:settings=json.loads(selection.read_text())
@@ -23,7 +24,7 @@ def run(config,once=False):
  while True:
   start=time.time()
   try:
-   settings=request(base+'/api/collector-config',token)
+   settings=request(base+'/api/collector-config'+suffix,token)
    temp=selection.with_suffix('.tmp');temp.write_text(json.dumps(settings));os.chmod(temp,0o600);temp.replace(selection)
   except Exception as e:log.warning('Settings unavailable (%s); retaining last selection',type(e).__name__)
   disabled=set(settings.get('disabled_sources',[]))|set(config.get('disabled_sources',[]))
@@ -46,7 +47,7 @@ def run(config,once=False):
   for p in pending:
    if int(p.stem)<time.time()-86400:p.unlink()
   for p in sorted(spool.glob('*.json'))[:32]:
-   try:request(base+'/api/ingest',token,json.loads(p.read_text()));p.unlink()
+   try:request(base+'/api/ingest'+suffix,token,json.loads(p.read_text()));p.unlink()
    except Exception as e:log.warning('Telemetry upload unavailable (%s); queued locally',type(e).__name__);break
   if once:return sample
   time.sleep(max(1,interval-(time.time()-start)))
