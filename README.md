@@ -262,7 +262,7 @@ This is a small custom monitor, not a replacement for backup validation, hardwar
 
 ## Settings, accounts and appearance
 
-Open **Settings** from the dashboard. **Sensors** lets administrators choose the host, disable entire sources, search/filter individual sensors, and select or deselect the visible set. Sensor selections affect everyone viewing that host. The dashboard host selector switches graphs and history independently between registered collectors.
+Open **Settings** from the dashboard. **Sensors** lets administrators choose the host, disable entire sources, search/filter individual sensors, and select or deselect the visible set. Sensor selections affect everyone viewing that host. The host tabs at the top switch graphs and history independently between registered collectors. **Add remote collector** opens registration for another Proxmox or Unraid host; newly registered hosts appear as additional tabs.
 
 **Appearance** offers Dark Slate, Light Paper, Midnight, and System themes, six accent presets, and a custom colour picker with an immediate preview. Press Save to persist it for your account. Colours are adjusted for readable contrast. **My account** changes your username or password after verifying your current password. Passwords require 16–256 characters. **Users** lets administrators add or edit administrators and viewers; viewers can view monitoring and change their own appearance/account, but cannot manage sensors, users, or collectors. The last administrator cannot be demoted. Password changes revoke previous sessions.
 
