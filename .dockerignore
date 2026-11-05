@@ -1,0 +1,9 @@
+.git
+.env
+.secrets
+collector
+deploy
+tests
+__pycache__
+*.db*
+*.zip

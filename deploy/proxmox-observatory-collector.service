@@ -1,0 +1,18 @@
+[Unit]
+Description=Proxmox Observatory outbound telemetry collector
+After=network-online.target pve-cluster.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/proxmox-observatory-collector/agent.py --config /etc/proxmox-observatory/collector.json
+WorkingDirectory=/opt/proxmox-observatory-collector
+User=root
+UMask=0077
+NoNewPrivileges=yes
+PrivateTmp=yes
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

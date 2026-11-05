@@ -1,0 +1,11 @@
+{
+  "dashboard_url": "http://YOUR_DOCKER_HOST:9106",
+  "token_file": "/etc/proxmox-observatory/ingest_token",
+  "interval_seconds": 30,
+  "spool_dir": "/var/lib/proxmox-observatory/spool",
+  "disabled_sources": [],
+  "options": {
+    "docker_ct_id": 104,
+    "ups_name": "ups@localhost"
+  }
+}
