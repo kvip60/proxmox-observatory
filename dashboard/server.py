@@ -7,7 +7,7 @@ from pathlib import Path
 STATIC=Path(__file__).parent/'static'
 MAX_BODY=2*1024*1024
 def password_hash(password):
- if not isinstance(password,str) or not 16<=len(password)<=256:raise ValueError('Use a password with 16–256 characters')
+ if not isinstance(password,str) or not 6<=len(password)<=256:raise ValueError('Use a password with 6–256 characters')
  salt=secrets.token_hex(16);digest=hashlib.pbkdf2_hmac('sha256',password.encode(),bytes.fromhex(salt),600000).hex()
  return 'pbkdf2_sha256$600000$'+salt+'$'+digest
 def password_matches(password,encoded):
@@ -168,7 +168,7 @@ class Store:
   return bool(r and r[0] and hmac.compare_digest(r[0],hashlib.sha256(token.encode()).hexdigest()))
 
 def create_server(store,token,password,username='admin',bind='0.0.0.0',port=9106):
- if len(token)<32 or len(password)<16:raise ValueError('Use a token of at least 32 and password of at least 16 characters')
+ if len(token)<32 or len(password)<6:raise ValueError('Use a token of at least 32 and password of at least 6 characters')
  store.bootstrap(username,password)
  attempts={};attempt_lock=threading.Lock()
  def safe_user(user):return {k:user[k] for k in ['id','username','role']}
