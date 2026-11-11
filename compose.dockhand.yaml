@@ -4,6 +4,9 @@ services:
     build: .
     image: proxmox-observatory:local
     pull_policy: build
+    labels:
+      dockhand.update: "false"
+      dockhand.notify: "false"
     restart: unless-stopped
     ports:
       - "${DASHBOARD_BIND_IP:-127.0.0.1}:${DASHBOARD_PORT:-9106}:9106"
