@@ -1,0 +1,39 @@
+# Standalone Compose file for a Dockhand Git stack; see docs/dockhand.md.
+services:
+  dashboard:
+    build: .
+    image: proxmox-observatory:local
+    pull_policy: build
+    restart: unless-stopped
+    ports:
+      - "${DASHBOARD_BIND_IP:-127.0.0.1}:${DASHBOARD_PORT:-9106}:9106"
+    environment:
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD_FILE: /run/secrets/admin_password
+      INGEST_TOKEN_FILE: /run/secrets/ingest_token
+      RETENTION_DAYS: ${RETENTION_DAYS:-7}
+      PROXMOX_URL: ${PROXMOX_URL:-}
+      IDRAC_URL: ${IDRAC_URL:-}
+    secrets:
+      - admin_password
+      - ingest_token
+    volumes:
+      - observatory_data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    cpus: 1.0
+secrets:
+  admin_password:
+    file: ${OBSERVATORY_SECRETS_DIR:?Set the absolute existing secrets directory}/admin_password.txt
+  ingest_token:
+    file: ${OBSERVATORY_SECRETS_DIR:?Set the absolute existing secrets directory}/ingest_token.txt
+volumes:
+  observatory_data:
+    external: true
+    name: ${OBSERVATORY_DATA_VOLUME:?Set the existing dashboard data volume name}

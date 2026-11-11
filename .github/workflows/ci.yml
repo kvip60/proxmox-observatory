@@ -27,3 +27,16 @@ jobs:
           curl --fail http://127.0.0.1:9106/healthz
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:9106/api/current)" = 401
           docker compose down
+      - name: Dockhand Git stack health and authentication
+        env:
+          OBSERVATORY_DATA_VOLUME: observatory-dockhand-ci
+        run: |
+          export OBSERVATORY_SECRETS_DIR="$PWD/.secrets"
+          docker volume create "$OBSERVATORY_DATA_VOLUME"
+          docker compose -p observatory-dockhand-ci -f compose.dockhand.yaml config --quiet
+          docker compose -p observatory-dockhand-ci -f compose.dockhand.yaml up -d --build --wait
+          curl --fail http://127.0.0.1:9106/healthz
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:9106/api/current)" = 401
+          docker compose -p observatory-dockhand-ci -f compose.dockhand.yaml down
+          docker volume inspect "$OBSERVATORY_DATA_VOLUME" >/dev/null
+          docker volume rm "$OBSERVATORY_DATA_VOLUME"
