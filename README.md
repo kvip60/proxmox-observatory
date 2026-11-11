@@ -1,5 +1,8 @@
 # Proxmox Observatory
 
+For automatic source builds and redeploys in Dockhand, use the
+[Git stack deployment guide](docs/dockhand.md) and `compose.dockhand.yaml`.
+
 A self-hosted sensor dashboard with graphs, plus outbound-only collectors for Proxmox VE and Unraid hosts. The dashboard runs in an unprivileged Docker container. The collector runs on Proxmox and performs read-only queries.
 
 **This repository does not install, replace, stop, or modify an existing monitoring service.** Installation is explicit. The dashboard defaults to port **9106**, allowing an older dashboard on 9105 to remain in place.
